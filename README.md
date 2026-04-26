@@ -30,13 +30,10 @@ The tool generates a formatted monthly duty report by cross-referencing your wee
 
 ## Getting Started
 
-1. Open `duty_report_v4.html` in any modern browser (Chrome, Edge, or Firefox recommended).
-2. Go to the **Setup** tab.
-3. Either **import** an existing project JSON, or fill in your details manually.
-4. Switch to **Generate & Edit** and click **Generate** to build your report.
-5. Export via **Print / Save PDF** or **Download .docx**.
-
-Your data is saved automatically in the browser's local storage, so it persists between sessions on the same device.
+1. Open `[url](https://mainong-jenbum.github.io/dutyreport/` in any modern browser (Chrome, Edge, or Firefox recommended).
+2. Either **import** an existing project JSON, or fill in your details manually.
+3. Switch to **Generate & Edit** and click **Generate** to build your report.
+4. Export via **Print / Save PDF** or **Download .docx**.
 
 ---
 
