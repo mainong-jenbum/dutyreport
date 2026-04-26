@@ -1,0 +1,816 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Teacher Duty Report Generator - Unified</title>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;600;700&family=Source+Code+Pro:wght@400;500&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+<style>
+  :root {
+    --ink: #1a1a2e;
+    --paper: #f5f0e8;
+    --cream: #ede7d9;
+    --accent: #c0392b;
+    --accent2: #2c3e6b;
+    --gold: #b8860b;
+    --rule: #8b7355;
+    --sidebar: #1a1a2e;
+    --sidebar-text: #d4c9b0;
+    --tag-bg: #e8e0d0;
+  }
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  body { background: var(--paper); color: var(--ink); font-family: 'DM Sans', sans-serif; min-height: 100vh; display: flex; flex-direction: column; }
+
+  /* Header */
+  .site-header { background: var(--sidebar); color: var(--sidebar-text); padding: 18px 36px; display: flex; align-items: center; justify-content: space-between; border-bottom: 3px solid var(--gold); }
+  .site-header h1 { font-family: 'Playfair Display', serif; font-size: 1.45rem; letter-spacing: .02em; color: #fff; }
+  .site-header .sub { font-size: .75rem; color: var(--sidebar-text); letter-spacing: .08em; text-transform: uppercase; margin-top: 2px; }
+  .header-badge { background: var(--accent); color: #fff; font-size: .7rem; font-weight: 600; letter-spacing: .1em; text-transform: uppercase; padding: 4px 12px; border-radius: 2px; }
+
+  /* Tab Nav */
+  .tab-nav { background: var(--ink); display: flex; padding: 0 36px; }
+  .tab-btn { background: none; border: none; color: #aaa; font-family: 'DM Sans', sans-serif; font-size: .82rem; font-weight: 500; letter-spacing: .06em; text-transform: uppercase; padding: 12px 20px; cursor: pointer; border-bottom: 3px solid transparent; transition: color .2s, border-color .2s; display: flex; align-items: center; gap: 7px; }
+  .tab-btn.active { color: #fff; border-bottom-color: var(--gold); }
+  .tab-btn:hover { color: #ddd; }
+  .tab-btn i { font-size: .78rem; }
+
+  .main { display: flex; flex: 1; }
+  .panel { display: none; flex: 1; padding: 32px 36px; animation: fadeIn .25s ease; }
+  .panel.active { display: block; }
+  @keyframes fadeIn { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; } }
+
+  .section-title { font-family: 'Playfair Display', serif; font-size: 1.3rem; color: var(--accent2); margin-bottom: 6px; display: flex; align-items: center; gap: 10px; }
+  .section-title::after { content: ''; flex: 1; height: 1px; background: var(--rule); opacity: .3; }
+  .section-sub { font-size: .8rem; color: #888; margin-bottom: 22px; letter-spacing: .04em; }
+
+  label { display: block; font-size: .78rem; font-weight: 600; letter-spacing: .07em; text-transform: uppercase; color: var(--accent2); margin-bottom: 5px; }
+  input[type="text"], input[type="time"], input[type="number"], select, textarea, input[type="date"] { width: 100%; background: #fff; border: 1.5px solid #ccc; border-radius: 3px; padding: 8px 12px; font-family: 'DM Sans', sans-serif; font-size: .88rem; color: var(--ink); transition: border-color .2s; outline: none; }
+  .form-row { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 16px; margin-bottom: 16px; }
+  .form-group { display: flex; flex-direction: column; }
+
+  .btn { font-family: 'DM Sans', sans-serif; font-size: .82rem; font-weight: 600; letter-spacing: .07em; text-transform: uppercase; padding: 10px 20px; border: none; border-radius: 3px; cursor: pointer; transition: all .2s; display: inline-flex; align-items: center; gap: 7px; }
+  .btn-primary { background: var(--accent2); color: #fff; }
+  .btn-danger { background: var(--accent); color: #fff; }
+  .btn-outline { background: transparent; border: 1.5px solid var(--accent2); color: var(--accent2); }
+  .btn-gold { background: var(--gold); color: #fff; }
+  .btn-dark { background: #2d2d2d; color: #fff; }
+  .btn-sm { padding: 5px 12px; font-size: .72rem; }
+
+  .schedule-grid { background: #fff; border: 1px solid #ddd; border-radius: 4px; overflow: hidden; margin-bottom: 24px; }
+  .schedule-grid table { width: 100%; border-collapse: collapse; }
+  .schedule-grid th { background: var(--ink); color: #fff; font-size: .75rem; font-weight: 600; letter-spacing: .08em; text-transform: uppercase; padding: 10px 14px; text-align: left; }
+  .schedule-grid td { padding: 9px 14px; font-size: .84rem; border-bottom: 1px solid var(--cream); vertical-align: middle; }
+  
+  .day-badge { display: inline-block; background: var(--accent2); color: #fff; font-size: .65rem; font-weight: 700; padding: 2px 7px; border-radius: 2px; }
+  .class-tag { background: var(--tag-bg); color: var(--ink); font-size: .78rem; padding: 2px 8px; border-radius: 2px; font-family: 'Source Code Pro', monospace; }
+
+  .report-controls { background: #fff; border: 1px solid #ddd; border-radius: 4px; padding: 20px 24px; margin-bottom: 16px; }
+  .rc-row1 { display: grid; grid-template-columns: 1fr 1fr 1fr auto; gap: 16px; align-items: end; }
+
+  .holiday-section { background: #fff8f0; border: 1px solid #e8d5b5; border-radius: 4px; padding: 16px 20px; margin-bottom: 20px; }
+  .holiday-chips { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 10px; }
+  .holiday-chip { background: var(--accent); color: #fff; font-size: .75rem; padding: 4px 10px; border-radius: 20px; display: flex; align-items: center; gap: 6px; }
+  .holiday-chip button { background: none; border: none; color: #fff; cursor: pointer; }
+
+  #report-output { background: #fff; border: 1px solid #ccc; border-radius: 4px; padding: 32px 40px; font-family: 'Times New Roman', Times, serif; }
+  .report-table { width: 100%; border-collapse: collapse; font-size: 12px; margin-top: 10px; }
+  .report-table th, .report-table td { border: 1px solid #000; padding: 5px 8px; }
+  .editable-cell { outline: none; }
+  .editable-cell:hover { background: #fffdf0; outline: 1px dashed var(--gold); }
+  .editable-cell:focus { background: #fffff0; outline: 2px solid var(--gold); }
+  .insert-row-btn { background: none; border: 1px solid #ccc; color: #aaa; cursor: pointer; border-radius: 2px; width: 18px; height: 18px; font-size: 11px; line-height: 1; padding: 0; display: inline-flex; align-items: center; justify-content: center; transition: all .15s; }
+  .insert-row-btn:hover { background: var(--accent2); border-color: var(--accent2); color: #fff; }
+  .report-table td.action-cell { border: none; background: transparent; padding: 0 3px; width: 22px; vertical-align: middle; }
+  .page-break-label { text-align:center; font-size:.75rem; color:#999; letter-spacing:.1em; text-transform:uppercase; margin: 18px 0 6px; padding: 6px; border-top: 1px dashed #ccc; }
+  .xml-box { background: #1a1a2e; color: #a8d8a8; font-family: 'Source Code Pro', monospace; font-size: .78rem; padding: 20px; border-radius: 4px; white-space: pre-wrap; max-height: 400px; overflow-y: auto; }
+
+  /* Report document styles */
+  .report-header-info p { margin-bottom: 2px; font-size: 13px; }
+  .report-title { text-align: center; font-size: 14px; font-weight: bold; text-decoration: underline; margin: 18px 0 14px; }
+  .report-total td { font-weight: bold; text-align: center; background: #f5f5f5; }
+  .report-grand td { font-weight: bold; text-align: center; background: #eeeeee; }
+  .report-footer { margin-top: 24px; font-size: 12px; }
+  .report-footer .note { margin-bottom: 12px; }
+  .report-footer .sig { text-align: right; margin-top: 20px; }
+  .sig-name { font-weight: bold; text-decoration: underline; }
+  .report-page + .report-page { margin-top: 32px; border-top: 2px dashed #ccc; padding-top: 24px; }
+  .print-actions { display: flex; gap: 10px; margin-bottom: 16px; flex-wrap: wrap; }
+  .alert { padding: 10px 16px; border-radius: 3px; font-size: .83rem; margin-bottom: 14px; display: none; align-items: center; gap: 8px; }
+  .alert-success { background: #d4edda; color: #155724; border: 1px solid #c3e6cb; }
+  .alert-error   { background: #f8d7da; color: #721c24; border: 1px solid #f5c6cb; }
+  @keyframes fa-spin-cust { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
+  .fa-spin-cust { animation: fa-spin-cust 1s linear infinite; }
+
+  @media print {
+    body > *:not(#printable) { display: none !important; }
+    #printable { display: block !important; position: fixed; top: 0; left: 0; width: 100%; background: #fff; padding: 20px; z-index: 9999; }
+    .action-cell, .insert-row-btn, .print-actions, .no-print { display: none !important; }
+    .page-break-label { page-break-before: always; border: none; }
+    .report-page + .report-page { page-break-before: always; border: none; padding-top: 0; margin-top: 0; }
+  }
+</style>
+</head>
+<body>
+
+<header class="site-header">
+  <div>
+    <h1>Duty Report Generator</h1>
+    <div class="sub">RGU &middot; CSE | Unified System</div>
+  </div>
+  <div class="header-badge">Compatibility Mode</div>
+</header>
+
+<nav class="tab-nav">
+  <button class="tab-btn active" onclick="switchTab('setup',this)"><i class="fa fa-user-tie"></i> Profile</button>
+  <button class="tab-btn" onclick="switchTab('timetable',this)"><i class="fa fa-calendar-days"></i> Timetable</button>
+  <button class="tab-btn" onclick="switchTab('report',this)"><i class="fa fa-file-pen"></i> Generate & Edit</button>
+  <button class="tab-btn" onclick="switchTab('xml',this)"><i class="fa fa-box-archive"></i> Project Data</button>
+</nav>
+
+<main class="main">
+
+  <div id="panel-setup" class="panel active">
+    <div class="section-title">Teacher Profile</div>
+    <div class="section-sub">Settings for Rajiv Gandhi University staff</div>
+    <div class="form-row">
+      <div class="form-group"><label>Teacher Name</label><input type="text" id="teacher-name"></div>
+      <div class="form-group"><label>Designation</label><input type="text" id="designation"></div>
+    </div>
+    <div class="form-row">
+      <div class="form-group"><label>Department</label><input type="text" id="department"></div>
+      <div class="form-group"><label>HOD Name</label><input type="text" id="hod-name"></div>
+    </div>
+    <div class="form-row">
+      <div class="form-group"><label>HOD Designation</label><input type="text" id="hod-desig"></div>
+    </div>
+    <button class="btn btn-primary" onclick="saveProfile()"><i class="fa fa-floppy-disk"></i> Save Profile</button>
+  </div>
+
+  <div id="panel-timetable" class="panel">
+    <div class="section-title">Weekly Timetable</div>
+    <div class="section-sub">Add slots manually or use the Legacy Import in the Data tab</div>
+    <div style="background:#fff;border:1px solid #ddd;border-radius:4px;padding:20px 24px;margin-bottom:20px;">
+      <div class="form-row">
+        <div class="form-group"><label>Day</label><select id="tt-day"><option>Monday</option><option>Tuesday</option><option>Wednesday</option><option>Thursday</option><option>Friday</option><option>Saturday</option></select></div>
+        <div class="form-group"><label>Class / Subject</label><input type="text" id="tt-class"></div>
+        <div class="form-group"><label>Start</label><input type="time" id="tt-start" value="10:30"></div>
+        <div class="form-group"><label>End</label><input type="time" id="tt-end" value="11:30"></div>
+      </div>
+      <button class="btn btn-primary" onclick="addSlot()"><i class="fa fa-plus"></i> Add Slot</button>
+    </div>
+    <div class="schedule-grid">
+      <table>
+        <thead><tr><th>Day</th><th>Class</th><th>Time</th><th>Action</th></tr></thead>
+        <tbody id="tt-body"></tbody>
+      </table>
+    </div>
+  </div>
+
+  <div id="panel-report" class="panel">
+    <div class="section-title">Duty Report Preview</div>
+    <div class="section-sub">Generated report cells are editable. Use the <strong>+</strong> button on any row to insert a blank entry above it — all entries below shift down.</div>
+    <div class="report-controls">
+      <div style="display:grid; grid-template-columns:1fr 1fr auto; gap:16px; align-items:end; margin-bottom:14px">
+        <div class="form-group"><label>Month</label><select id="rep-month"></select></div>
+        <div class="form-group"><label>Year</label><input type="text" id="rep-year"></div>
+        <button class="btn btn-primary" onclick="generateReport()"><i class="fa fa-wand-magic-sparkles"></i> Generate</button>
+      </div>
+      <div style="border-top:1px solid #eee; padding-top:14px; display:grid; grid-template-columns:1fr 1fr 1fr; gap:16px; align-items:start;">
+        <div class="form-group">
+          <label><i class="fa fa-table-columns" style="opacity:.6"></i> Entries per Column</label>
+          <input type="number" id="opt-per-col" value="20" min="1" max="500">
+          <span style="font-size:.7rem;color:#999;display:block;margin-top:3px">Rows per left / right column</span>
+        </div>
+        <div class="form-group">
+          <label><i class="fa fa-list-ol" style="opacity:.6"></i> Max Total Entries</label>
+          <input type="number" id="opt-max-total" value="" min="1" placeholder="Unlimited">
+          <span style="font-size:.7rem;color:#999;display:block;margin-top:3px">Leave blank = no limit</span>
+        </div>
+        <div class="form-group">
+          <label><i class="fa fa-arrow-right-from-bracket" style="opacity:.6"></i> Overflow Behaviour</label>
+          <select id="opt-overflow">
+            <option value="paginate">Split into multiple tables / pages</option>
+            <option value="truncate">Truncate — stop at max total</option>
+          </select>
+          <span style="font-size:.7rem;color:#999;display:block;margin-top:3px">When entries exceed column limit</span>
+        </div>
+      </div>
+    </div>
+    <div class="holiday-section">
+      <div style="display:flex; align-items:center; gap:10px; margin-bottom:8px; flex-wrap:wrap;">
+        <span style="font-size:.78rem; font-weight:600; letter-spacing:.07em; text-transform:uppercase; color:var(--accent2);">
+          <i class="fa fa-calendar-xmark" style="color:var(--accent)"></i> Holidays / Leave Dates
+        </span>
+        <input type="date" id="holiday-date" style="width:auto; padding:5px 10px; font-size:.82rem;">
+        <input type="text" id="holiday-label" placeholder="Label (e.g. Bihu)" style="width:160px; padding:5px 10px; font-size:.82rem;">
+        <button class="btn btn-sm btn-danger" onclick="addHoliday()"><i class="fa fa-plus"></i> Add</button>
+      </div>
+      <div class="holiday-chips" id="holiday-chips"></div>
+    </div>
+    <div id="rep-alert" class="alert"></div>
+    <div class="print-actions no-print">
+      <button class="btn btn-gold" onclick="printReport()"><i class="fa fa-print"></i> Print / Save PDF</button>
+      <button id="docx-btn" class="btn btn-dark" onclick="exportDocx()"><i class="fa fa-file-word"></i> Download .docx</button>
+      <button class="btn btn-outline" onclick="renderReport()"><i class="fa fa-rotate"></i> Refresh Preview</button>
+    </div>
+    <div id="report-output">
+      <div style="text-align:center;padding:48px 20px;color:#aaa;font-size:.9rem"><i class="fa fa-file-circle-plus" style="font-size:2.2rem;display:block;margin-bottom:12px;opacity:.3"></i>Click <strong>Generate</strong> to preview the duty report</div>
+    </div>
+  </div>
+
+  <div id="panel-xml" class="panel">
+    <div class="section-title">Unified Project Data</div>
+    <div class="section-sub">Export your entire system, or import data from previous versions.</div>
+    
+    <div style="display:grid; grid-template-columns: 1fr 1fr; gap:20px; margin-bottom:20px">
+      <div style="background:rgba(0,0,0,0.03); padding:20px; border-radius:4px">
+        <label style="color:var(--gold)">Full Project Backup (JSON)</label>
+        <p style="font-size:0.75rem; margin-bottom:10px">Export or import your entire project — Profile, Timetable &amp; Holidays.</p>
+        <div style="display:flex; gap:10px">
+          <label class="btn btn-outline" style="cursor:pointer"><i class="fa fa-folder-open"></i> Import JSON<input type="file" accept=".json" onchange="importUnifiedJSON(event)" style="display:none"></label>
+          <button class="btn btn-outline" onclick="exportUnifiedJSON()"><i class="fa fa-download"></i> Export JSON</button>
+        </div>
+      </div>
+      
+      <div style="background:rgba(184, 134, 11, 0.08); padding:20px; border-radius:4px; border: 1px dashed var(--gold)">
+        <label style="color:var(--accent)">Legacy Compatibility (JSON — Slots Only)</label>
+        <p style="font-size:0.75rem; margin-bottom:10px">Import timetable slots from older versions that exported slots-only JSON.</p>
+        <label class="btn btn-gold" style="cursor:pointer">
+          <i class="fa fa-clock-rotate-left"></i> Import Previous Timetable
+          <input type="file" accept=".json" onchange="importLegacyTimetable(event)" style="display:none">
+        </label>
+      </div>
+    </div>
+
+    <div id="xml-display" class="xml-box">Loading state...</div>
+  </div>
+
+</main>
+
+<div id="printable" style="display:none"></div>
+
+<script src="https://unpkg.com/docx@8.5.0/build/index.umd.js"></script>
+<script>
+let appState = JSON.parse(localStorage.getItem('dutyAppUnified')) || {
+  profile: { name: '', designation: 'Guest Assistant Professor', department: 'CSE', university: 'RGU', hodName: 'Mr. Ani Taggu', hodDesig: 'Head, Dept of CSE' },
+  slots: [],
+  holidays: []
+};
+
+function saveState() {
+  localStorage.setItem('dutyAppUnified', JSON.stringify(appState));
+  if (document.getElementById('panel-xml').classList.contains('active')) refreshXMLView();
+}
+
+// ── COMPATIBILITY HANDLER ─────────────────────
+function importLegacyTimetable(ev) {
+    const reader = new FileReader();
+    reader.onload = (e) => {
+        try {
+            const data = JSON.parse(e.target.result);
+            let legacySlots = [];
+            
+            // Handle different legacy formats (Array or Object-wrapped)
+            if (Array.isArray(data)) {
+                legacySlots = data;
+            } else if (data.slots && Array.isArray(data.slots)) {
+                legacySlots = data.slots;
+            }
+
+            if (legacySlots.length > 0) {
+                // Map legacy data to new structure with unique IDs
+                const processed = legacySlots.map(s => ({
+                    id: Date.now() + Math.random(),
+                    day: s.day || 'Monday',
+                    class: s.class || s.subject || 'Untitled',
+                    start: s.start || '10:00',
+                    end: s.end || '11:00'
+                }));
+                
+                appState.slots = [...appState.slots, ...processed];
+                saveState();
+                alert(`Successfully imported ${processed.length} slots from previous version.`);
+                location.reload();
+            } else {
+                alert("No valid timetable data found in this file.");
+            }
+        } catch (err) {
+            alert("Error parsing legacy file. Ensure it is a valid JSON export.");
+        }
+    };
+    reader.readAsText(ev.target.files[0]);
+}
+
+// ── CORE LOGIC ────────────────────────────────
+function switchTab(tab, btn) {
+  document.querySelectorAll('.panel').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+  document.getElementById('panel-'+tab).classList.add('active');
+  btn.classList.add('active');
+  if (tab==='xml') refreshXMLView();
+}
+
+function saveProfile() {
+  appState.profile = { 
+    name: V('teacher-name'), designation: V('designation'), department: V('department'), 
+    university: "Rajiv Gandhi University", hodName: V('hod-name'), hodDesig: V('hod-desig') 
+  };
+  saveState(); alert('Profile saved.');
+}
+
+function addSlot() {
+  const day=V('tt-day'), cls=V('tt-class'), st=V('tt-start'), en=V('tt-end');
+  if (!cls||!st||!en) return;
+  appState.slots.push({ id:Date.now(), day, class:cls, start:st, end:en });
+  saveState(); renderSlots();
+}
+
+function renderSlots() {
+  const tbody = document.getElementById('tt-body');
+  tbody.innerHTML = appState.slots.map(s=>`
+    <tr>
+      <td><span class="day-badge">${s.day}</span></td>
+      <td><span class="class-tag">${s.class}</span></td>
+      <td>${s.start} - ${s.end}</td>
+      <td><button class="btn btn-sm btn-danger" onclick="removeSlot(${s.id})">&times;</button></td>
+    </tr>`).join('');
+}
+
+function removeSlot(id) { appState.slots = appState.slots.filter(s=>s.id!=id); saveState(); renderSlots(); }
+
+// ── CONSTANTS ─────────────────────────────────
+const DAYS   = ['Monday','Tuesday','Wednesday','Thursday','Friday','Saturday','Sunday'];
+const MONTHS = ['January','February','March','April','May','June','July','August','September','October','November','December'];
+
+function esc(s) { return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+function fmt(t) { if(!t) return ''; const [h,m]=t.split(':').map(Number); return `${h%12||12}:${String(m).padStart(2,'0')} ${h<12?'am':'pm'}`; }
+function fmtDate(iso) { const [y,mo,d]=iso.split('-'); return `${d}/${mo}/${y}`; }
+function showAlert(id, type, msg) {
+  const el = document.getElementById(id);
+  if (!el) return;
+  el.className = `alert alert-${type}`;
+  el.innerHTML = `<i class="fa ${type==='success'?'fa-circle-check':'fa-circle-exclamation'}"></i> ${msg}`;
+  el.style.display = 'flex';
+  clearTimeout(el._t);
+  el._t = setTimeout(() => el.style.display = 'none', 5000);
+}
+
+// ── REPORT DATA MODEL ─────────────────────────
+// Flat array of entries; rebuilt on Generate, mutated by insert-row.
+let reportEntries = [];
+let reportMeta = { mo: 0, yr: 2026, daysInMo: 0, sundayCount: 0, saturdayCount: 0, holidayCount: 0 };
+
+// ── BUILD ENTRIES (mirrors v2 buildEntries) ────
+function buildEntries() {
+  const mo       = +V('rep-month');
+  const yr       = +V('rep-year');
+  const colLimit = Math.max(1, parseInt(V('opt-per-col'))    || 20);
+  const maxTotal = parseInt(V('opt-max-total')) || Infinity;
+  const overflow = V('opt-overflow');
+  const slots    = appState.slots;
+
+  if (!slots.length) return { error: 'No timetable slots found. Please add your weekly schedule first.' };
+
+  const hols = new Set(
+    appState.holidays
+      .filter(h => { const dt = new Date(h.date); return dt.getFullYear()===yr && dt.getMonth()===mo; })
+      .map(h => h.date)
+  );
+
+  const daysInMo = new Date(yr, mo+1, 0).getDate();
+  const all = [];
+  let sundayCount = 0, saturdayCount = 0, holidayCount = 0;
+
+  for (let dd = 1; dd <= daysInMo; dd++) {
+    const dt  = new Date(yr, mo, dd);
+    const dow = dt.getDay();
+    if (dow === 0) { sundayCount++; continue; }
+    if (dow === 6) { saturdayCount++; continue; }
+    const iso = `${yr}-${String(mo+1).padStart(2,'0')}-${String(dd).padStart(2,'0')}`;
+    if (hols.has(iso)) { holidayCount++; continue; }
+    const dayName = DAYS[dow - 1];
+    slots
+      .filter(s => s.day === dayName)
+      .sort((a,b) => a.start.localeCompare(b.start))
+      .forEach(s => {
+        all.push({ date: iso, display: fmtDate(iso), cls: s.class, time: `${fmt(s.start)} To ${fmt(s.end)}` });
+      });
+  }
+
+  return { all, colLimit, maxTotal, overflow, mo, yr, daysInMo, sundayCount, saturdayCount, holidayCount };
+}
+
+// ── GENERATE (populates model then renders) ────
+function generateReport() {
+  const res = buildEntries();
+  if (res.error) { showAlert('rep-alert','error', res.error); return; }
+
+  const { all, colLimit, maxTotal, overflow, mo, yr, daysInMo, sundayCount, saturdayCount, holidayCount } = res;
+
+  let capped = isFinite(maxTotal) ? all.slice(0, maxTotal) : all;
+
+  // Build pages
+  const pageSize = colLimit * 2;
+  let pages = [];
+  if (overflow === 'truncate') {
+    pages = [capped.slice(0, pageSize)];
+  } else {
+    let rem = [...capped];
+    while (rem.length) pages.push(rem.splice(0, pageSize));
+    if (!pages.length) pages = [[]];
+  }
+
+  // Flatten into reportEntries (with page/position metadata stripped — just flat)
+  reportEntries = capped;
+  reportMeta = { mo, yr, daysInMo, sundayCount, saturdayCount, holidayCount, colLimit, overflow };
+
+  renderReport();
+  const extra = pages.length > 1 ? ` — split into ${pages.length} pages/tables` : '';
+  showAlert('rep-alert','success', `Report generated: ${capped.length} entries${extra}.`);
+}
+
+// ── RENDER (reads model + layout opts → HTML) ──
+function renderReport() {
+  const { mo, yr, daysInMo, sundayCount, saturdayCount, holidayCount } = reportMeta;
+  const colLimit  = Math.max(1, parseInt(V('opt-per-col')) || 20);
+  const maxTotal  = parseInt(V('opt-max-total')) || Infinity;
+  const overflow  = V('opt-overflow');
+  const profile   = appState.profile;
+
+  let entries = isFinite(maxTotal) ? reportEntries.slice(0, maxTotal) : reportEntries;
+
+  const pageSize = colLimit * 2;
+  let pages = [];
+  if (overflow === 'truncate') {
+    pages = [entries.slice(0, pageSize)];
+  } else {
+    let rem = [...entries];
+    while (rem.length) pages.push(rem.splice(0, pageSize));
+    if (!pages.length) pages = [[]];
+  }
+
+  const monthName = MONTHS[mo];
+  const totalAll  = entries.length;
+  const totalWorkingDays = daysInMo - sundayCount - saturdayCount - holidayCount;
+
+  const html = pages.map((pageEntries, pi) => {
+    const left  = pageEntries.slice(0, colLimit);
+    const right = pageEntries.slice(colLimit);
+    const maxR  = Math.max(left.length, right.length);
+    const isLast = pi === pages.length - 1;
+    // global indices into reportEntries for insert-row callbacks
+    const globalBase = pi * pageSize;
+
+    let rows = '';
+    for (let i = 0; i < maxR; i++) {
+      const L = left[i]  || { display:'', cls:'', time:'' };
+      const R = right[i] || { display:'', cls:'', time:'' };
+      const gL = globalBase + i;
+      const gR = globalBase + colLimit + i;
+      rows += buildRow(L, R, gL, gR);
+    }
+    // Extra insert-row at bottom (to append after last entry)
+    const insertBase = globalBase + maxR;
+    rows += `<tr>
+      <td class="action-cell"><button class="insert-row-btn" title="Append row at end of left column" onclick="insertRowAt(${insertBase})">+</button></td>
+      <td colspan="3" style="border:none;background:transparent"></td>
+      <td class="action-cell"><button class="insert-row-btn" title="Append row at end of right column" onclick="insertRowAt(${globalBase + colLimit + maxR})">+</button></td>
+      <td colspan="3" style="border:none;background:transparent"></td>
+    </tr>`;
+
+    const suffix = pages.length > 1 ? ` (Page ${pi+1} of ${pages.length})` : '';
+    return `<div class="report-page">
+      ${pi === 0 ? `<div class="report-header-info">
+        <p>Name of ${esc(profile.designation)}: <strong>${esc(profile.name)}</strong></p>
+        <p>Department: <strong>${esc(profile.department)}, ${esc(profile.university)}</strong></p>
+      </div>` : ''}
+      <div class="report-title">Duty report for the month of ${monthName}, ${yr}${suffix}</div>
+      <table class="report-table" id="final-table-${pi}">
+        <thead><tr>
+          <th style="width:22px;border:none;background:transparent;padding:0"></th>
+          <th>Date</th><th>Class / Subject</th><th>Time</th>
+          <th style="width:22px;border:none;background:transparent;padding:0"></th>
+          <th>Date</th><th>Class / Subject</th><th>Time</th>
+        </tr></thead>
+        <tbody>${rows}
+          <tr class="report-total">
+            <td class="action-cell" style="border:none;background:transparent"></td>
+            <td colspan="3">Total = ${left.length}</td>
+            <td class="action-cell" style="border:none;background:transparent"></td>
+            <td colspan="3">Total = ${right.length}</td>
+          </tr>
+          ${isLast ? `<tr class="report-grand">
+            <td class="action-cell" style="border:none;background:transparent"></td>
+            <td colspan="7">Grand Total = ${totalAll} Classes</td>
+          </tr>` : ''}
+        </tbody>
+      </table>
+      ${isLast ? `<div class="report-footer">
+        <div class="note">&bull; <strong>P</strong> &ndash; Practical Class</div>
+        <div style="margin-top:10px;font-size:11px;color:#666">Working Days: ${totalWorkingDays} &nbsp;|&nbsp; Sundays: ${sundayCount} &nbsp;|&nbsp; Saturdays: ${saturdayCount} &nbsp;|&nbsp; Holidays/Leave: ${holidayCount}</div>
+        <div class="sig"><p class="sig-name">(${esc(profile.hodName)})</p><p>${esc(profile.hodDesig)}</p></div>
+      </div>` : ''}
+    </div>`;
+  }).join('');
+
+  document.getElementById('report-output').innerHTML = html;
+}
+
+// ── ROW BUILDER ────────────────────────────────
+function buildRow(L, R, idxL, idxR) {
+  return `<tr>
+    <td class="action-cell"><button class="insert-row-btn" title="Insert blank row above — shifts entries down" onclick="insertRowAt(${idxL})">+</button></td>
+    <td>${esc(L.display)}</td>
+    <td contenteditable="true" class="editable-cell" oninput="syncEdit(${idxL},'cls',this)">${esc(L.cls)}</td>
+    <td contenteditable="true" class="editable-cell" oninput="syncEdit(${idxL},'time',this)">${esc(L.time)}</td>
+    <td class="action-cell"><button class="insert-row-btn" title="Insert blank row above — shifts entries down" onclick="insertRowAt(${idxR})">+</button></td>
+    <td>${esc(R.display)}</td>
+    <td contenteditable="true" class="editable-cell" oninput="syncEdit(${idxR},'cls',this)">${esc(R.cls)}</td>
+    <td contenteditable="true" class="editable-cell" oninput="syncEdit(${idxR},'time',this)">${esc(R.time)}</td>
+  </tr>`;
+}
+
+function syncEdit(idx, field, el) {
+  if (reportEntries[idx]) reportEntries[idx][field] = el.innerText;
+}
+
+function insertRowAt(idx) {
+  if (idx < 0) idx = 0;
+  if (idx > reportEntries.length) idx = reportEntries.length;
+  reportEntries.splice(idx, 0, { date:'', display:'', cls:'', time:'' });
+  renderReport();
+}
+
+// ── PRINT / PDF ────────────────────────────────
+function printReport() {
+  const c = document.getElementById('report-output').innerHTML;
+  if (!c.includes('report-table')) {
+    showAlert('rep-alert','error','Please generate a report first.');
+    return;
+  }
+  const pd = document.getElementById('printable');
+  pd.style.display = 'block';
+  pd.innerHTML = `
+    <style>
+      @page { size: A4 landscape; margin: 1cm; }
+      body { font-family: 'Times New Roman', serif; background: #fff; }
+      .report-page { width: 100%; }
+      .report-header-info p { margin-bottom: 2px; font-size: 13px; }
+      .report-title { text-align: center; font-size: 15px; font-weight: bold; text-decoration: underline; margin: 10px 0; }
+      .report-table { width: 100%; border-collapse: collapse; font-size: 12px; }
+      .report-table th, .report-table td { border: 1px solid #000; padding: 4px 8px; }
+      .report-table th { background: #f0f0f0 !important; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+      .report-total td { font-weight: bold; text-align: center; background: #f5f5f5 !important; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+      .report-grand td { font-weight: bold; text-align: center; background: #eee !important; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+      .report-footer { margin-top: 15px; font-size: 12px; }
+      .sig { text-align: right; margin-top: 15px; }
+      .sig-name { font-weight: bold; text-decoration: underline; }
+      .report-page + .report-page { page-break-before: always; }
+      .action-cell, .insert-row-btn { display: none !important; }
+      .page-break-label { page-break-before: always; }
+    </style>
+    ${c}`;
+  window.print();
+  setTimeout(() => { pd.style.display = 'none'; pd.innerHTML = ''; }, 1500);
+}
+
+// ── DOCX EXPORT ────────────────────────────────
+async function exportDocx() {
+  const docxLib = window.docx || (typeof docx !== 'undefined' ? docx : null);
+  if (!docxLib) {
+    showAlert('rep-alert','error','The docx.js library is not loaded. Check your internet connection.');
+    return;
+  }
+  if (!reportEntries.length) {
+    showAlert('rep-alert','error','Please generate a report first.');
+    return;
+  }
+
+  const btn = document.getElementById('docx-btn');
+  const origHTML = btn.innerHTML;
+  btn.innerHTML = '<i class="fa fa-circle-notch fa-spin-cust"></i> Building...';
+  btn.disabled = true;
+
+  try {
+    const colLimit = Math.max(1, parseInt(V('opt-per-col')) || 20);
+    const maxTotal = parseInt(V('opt-max-total')) || Infinity;
+    const profile  = appState.profile;
+    const { mo, yr } = reportMeta;
+
+    const entries = isFinite(maxTotal) ? reportEntries.slice(0, maxTotal) : reportEntries;
+    const totalAll = entries.length;
+
+    const { Document, Packer, Paragraph, TextRun, Table, TableRow, TableCell,
+            AlignmentType, BorderStyle, WidthType, VerticalAlign, PageOrientation } = docxLib;
+
+    // A4 landscape usable width in DXA (1440 DXA = 1 inch; A4 landscape = ~11.69in; minus 2×1cm margins ≈ 9.69in)
+    const CONTENT_WIDTH = 13920; // ~9.67 inches
+    const COL = [1740, 4300, 1870, 1740, 4300, 1870]; // date, class, time × 2
+
+    const bd = { style: BorderStyle.SINGLE, size: 4, color: '000000' };
+    const borders = { top: bd, bottom: bd, left: bd, right: bd };
+    const noBorder = { style: BorderStyle.NIL, size: 0, color: 'FFFFFF' };
+    const noBorders = { top: noBorder, bottom: noBorder, left: noBorder, right: noBorder };
+
+    const mkCell = (text, w, opts = {}) => new TableCell({
+      borders: opts.noBorder ? noBorders : borders,
+      width: { size: w, type: WidthType.DXA },
+      verticalAlign: VerticalAlign.CENTER,
+      shading: { fill: opts.fill || 'FFFFFF' },
+      margins: { top: 40, bottom: 40, left: 100, right: 100 },
+      children: [new Paragraph({
+        alignment: opts.align || AlignmentType.LEFT,
+        children: [new TextRun({ text: String(text || ''), bold: !!opts.bold, font: 'Times New Roman', size: opts.sz || 19 })]
+      })]
+    });
+
+    // Split entries into pages
+    const pageSize = colLimit * 2;
+    const pages = [];
+    let rem = [...entries];
+    while (rem.length) pages.push(rem.splice(0, pageSize));
+    if (!pages.length) pages.push([]);
+
+    const sections = [];
+
+    pages.forEach((pageEntries, pi) => {
+      const left    = pageEntries.slice(0, colLimit);
+      const right   = pageEntries.slice(colLimit);
+      const maxRows = Math.max(left.length, right.length);
+      const isLast  = pi === pages.length - 1;
+      const suffix  = pages.length > 1 ? ` (Page ${pi+1} of ${pages.length})` : '';
+
+      const tableRows = [];
+
+      // Header row
+      tableRows.push(new TableRow({
+        children: ['Date','Class / Subject','Time','Date','Class / Subject','Time'].map((t, i) =>
+          mkCell(t, COL[i], { bold: true, fill: 'F0F0F0', align: AlignmentType.CENTER, sz: 20 })
+        )
+      }));
+
+      // Data rows
+      for (let i = 0; i < maxRows; i++) {
+        const L = left[i],  R = right[i];
+        tableRows.push(new TableRow({
+          children: [
+            mkCell(L ? L.display : '', COL[0]),
+            mkCell(L ? L.cls     : '', COL[1]),
+            mkCell(L ? L.time    : '', COL[2]),
+            mkCell(R ? R.display : '', COL[3]),
+            mkCell(R ? R.cls     : '', COL[4]),
+            mkCell(R ? R.time    : '', COL[5])
+          ]
+        }));
+      }
+
+      // Totals row
+      tableRows.push(new TableRow({
+        children: [
+          new TableCell({ borders, columnSpan: 3, shading: { fill: 'F5F5F5' }, width: { size: COL[0]+COL[1]+COL[2], type: WidthType.DXA },
+            children: [new Paragraph({ alignment: AlignmentType.CENTER, children: [new TextRun({ text: `Total = ${left.length}`, bold: true, font: 'Times New Roman', size: 20 })] })] }),
+          new TableCell({ borders, columnSpan: 3, shading: { fill: 'F5F5F5' }, width: { size: COL[3]+COL[4]+COL[5], type: WidthType.DXA },
+            children: [new Paragraph({ alignment: AlignmentType.CENTER, children: [new TextRun({ text: `Total = ${right.length}`, bold: true, font: 'Times New Roman', size: 20 })] })] })
+        ]
+      }));
+
+      // Grand total (last page only)
+      if (isLast) {
+        tableRows.push(new TableRow({
+          children: [new TableCell({
+            borders, columnSpan: 6, shading: { fill: 'EEEEEE' }, width: { size: CONTENT_WIDTH, type: WidthType.DXA },
+            children: [new Paragraph({ alignment: AlignmentType.CENTER, children: [new TextRun({ text: `Grand Total = ${totalAll} Classes`, bold: true, font: 'Times New Roman', size: 22 })] })]
+          })]
+        }));
+      }
+
+      const children = [];
+      if (pi === 0) {
+        children.push(new Paragraph({ children: [new TextRun({ text: `Name of ${profile.designation}: ${profile.name}`, bold: true, font: 'Times New Roman', size: 24 })] }));
+        children.push(new Paragraph({ spacing: { after: 160 }, children: [new TextRun({ text: `Department: ${profile.department}, ${profile.university}`, bold: true, font: 'Times New Roman', size: 24 })] }));
+      }
+      children.push(new Paragraph({
+        alignment: AlignmentType.CENTER, spacing: { after: 200 },
+        children: [new TextRun({ text: `Duty report for the month of ${MONTHS[mo]}, ${yr}${suffix}`, bold: true, underline: {}, font: 'Times New Roman', size: 28 })]
+      }));
+      children.push(new Table({ width: { size: CONTENT_WIDTH, type: WidthType.DXA }, rows: tableRows }));
+
+      if (isLast) {
+        children.push(new Paragraph({ spacing: { before: 200 }, children: [new TextRun({ text: '• P – Practical Class', font: 'Times New Roman', size: 20 })] }));
+        children.push(new Paragraph({ alignment: AlignmentType.RIGHT, spacing: { before: 400 }, children: [new TextRun({ text: `(${profile.hodName})`, bold: true, underline: {}, font: 'Times New Roman', size: 22 })] }));
+        children.push(new Paragraph({ alignment: AlignmentType.RIGHT, children: [new TextRun({ text: profile.hodDesig, font: 'Times New Roman', size: 22 })] }));
+      }
+
+      sections.push({
+        properties: {
+          page: {
+            orientation: PageOrientation.LANDSCAPE,
+            margin: { top: 567, right: 567, bottom: 567, left: 567 }
+          }
+        },
+        children
+      });
+    });
+
+    const doc = new Document({ sections });
+    const blob = await Packer.toBlob(doc);
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(blob);
+    a.download = `Duty_Report_${MONTHS[mo]}_${yr}.docx`;
+    a.click();
+    showAlert('rep-alert','success','Word document downloaded successfully!');
+
+  } catch (err) {
+    console.error(err);
+    showAlert('rep-alert','error','Export failed: ' + err.message);
+  } finally {
+    btn.innerHTML = origHTML;
+    btn.disabled = false;
+  }
+}
+
+// ── HOLIDAY FUNCTIONS ─────────────────────────
+function addHoliday() {
+  const date = V('holiday-date');
+  const label = V('holiday-label').trim() || 'Holiday';
+  if (!date) return alert('Please pick a date.');
+  if (appState.holidays.find(h => h.date === date)) return alert('This date is already added.');
+  appState.holidays.push({ date, label });
+  saveState();
+  renderHolidayChips();
+  document.getElementById('holiday-date').value = '';
+  document.getElementById('holiday-label').value = '';
+}
+
+function removeHoliday(date) {
+  appState.holidays = appState.holidays.filter(h => h.date !== date);
+  saveState();
+  renderHolidayChips();
+}
+
+function renderHolidayChips() {
+  const container = document.getElementById('holiday-chips');
+  if (!appState.holidays.length) {
+    container.innerHTML = '<span style="font-size:.75rem;color:#aaa;font-style:italic;">No holidays added yet.</span>';
+    return;
+  }
+  container.innerHTML = appState.holidays
+    .sort((a,b) => a.date.localeCompare(b.date))
+    .map(h => {
+      const disp = new Date(h.date + 'T00:00:00').toLocaleDateString('en-IN', {day:'2-digit', month:'short'});
+      return `<span class="holiday-chip">${disp} — ${h.label}<button onclick="removeHoliday('${h.date}')" title="Remove">&times;</button></span>`;
+    }).join('');
+}
+
+// ── UTILS ─────────────────────────────────────
+function V(id) { return document.getElementById(id).value; }
+function refreshXMLView() { document.getElementById('xml-display').innerText = JSON.stringify(appState, null, 2); }
+
+function exportUnifiedJSON() {
+  const blob = new Blob([JSON.stringify(appState, null, 2)], {type:'application/json'});
+  const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = 'RGU_Project.json'; a.click();
+}
+
+function importUnifiedJSON(ev) {
+  const reader = new FileReader();
+  reader.onload = (e) => {
+    try {
+      const data = JSON.parse(e.target.result);
+      if (typeof data !== 'object' || Array.isArray(data)) {
+        alert('Invalid file: expected a full project JSON (with profile, slots, holidays). Use "Import Previous Timetable" for slots-only files.');
+        return;
+      }
+      if (data.profile) appState.profile = { ...appState.profile, ...data.profile };
+      if (Array.isArray(data.slots)) appState.slots = data.slots;
+      if (Array.isArray(data.holidays)) appState.holidays = data.holidays;
+      saveState();
+      const p = appState.profile;
+      if (p.name)        document.getElementById('teacher-name').value = p.name;
+      if (p.designation) document.getElementById('designation').value  = p.designation;
+      if (p.department)  document.getElementById('department').value   = p.department;
+      if (p.hodName)     document.getElementById('hod-name').value     = p.hodName;
+      if (p.hodDesig)    document.getElementById('hod-desig').value    = p.hodDesig;
+      renderSlots();
+      renderHolidayChips();
+      refreshXMLView();
+      alert('Project imported successfully — Profile, Timetable & Holidays restored.');
+    } catch (err) {
+      alert('Error reading file. Make sure it is a valid JSON export from this app.');
+    }
+  };
+  reader.readAsText(ev.target.files[0]);
+  ev.target.value = '';
+}
+
+document.addEventListener('DOMContentLoaded', () => {
+  const mSel = document.getElementById('rep-month');
+  ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'].forEach((m,i) => mSel.add(new Option(m, i)));
+  mSel.value = new Date().getMonth();
+  document.getElementById('rep-year').value = 2026;
+  renderSlots();
+  renderHolidayChips();
+});
+</script>
+</body>
+</html>
